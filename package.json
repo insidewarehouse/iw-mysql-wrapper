@@ -1,0 +1,23 @@
+{
+  "name": "iw-mysql-wrapper",
+  "version": "0.0.0",
+  "description": "Internal wrapper: promises, logging, binding",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:insidewarehouse/iw-mysql-wrapper.git"
+  },
+  "author": "Dominykas Blyžė, InsideWarehouse <hello@dominykas.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/insidewarehouse/iw-mysql-wrapper/issues"
+  },
+  "homepage": "https://github.com/insidewarehouse/iw-mysql-wrapper",
+  "dependencies": {
+    "mysql": "2.x",
+    "q": "1.x"
+  }
+}
