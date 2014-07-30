@@ -6,9 +6,11 @@ var md5 = function (str) {
 	return crypto.createHash("md5").update(str).digest("hex");
 };
 
-var createQueryFormatter = function (DB_DEBUG) {
+var Database = function (options) {
+	var DB_DEBUG = !!options.showDebugInfo;
+
 	// copy/pasted from the mysql lib docs - @todo: probably needs more tests?
-	return function queryFormat(query, values) {
+	var queryFormat = function queryFormat(query, values) {
 		if (!values) return query;
 
 		var formatted = query.replace(/\:(\w+)/g, function (txt, key) {
@@ -25,20 +27,19 @@ var createQueryFormatter = function (DB_DEBUG) {
 		return formatted;
 	};
 
-};
-
-var Database = function (options) {
-	var DB_DEBUG = !!options.showDebugInfo;
-
 	var pool = this.pool = mysql.createPool({
 		host: options.hostname,
 		user: options.username,
 		password: options.password,
 		database: options.database,
 		connectionLimit: 100,
-		queryFormat: createQueryFormatter(DB_DEBUG),
+		queryFormat: queryFormat,
 		multipleStatements: !!options.multipleStatements
 	});
+
+	this.queryFormat = function (query, values) {
+		return queryFormat.call(this.pool, query, values);
+	};
 
 	this.query = function (query, args) {
 		var start = process.hrtime();
