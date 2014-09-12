@@ -41,6 +41,21 @@ var Database = function (options) {
 		return queryFormat.call(this.pool, query, values);
 	};
 
+	this.paramify = function (list, prefix) {
+		var result = {
+			values: {},
+			tokens: []
+		};
+
+		list.forEach(function (item, itemIndex) {
+			var tokenKey = prefix + itemIndex;
+			result.tokens.push(":" + tokenKey);
+			result.values[tokenKey] = item;
+		});
+
+		return result;
+	};
+
 	this.query = function (query, args) {
 		var start = process.hrtime();
 		return Q.ninvoke(pool, "query", query, args)
