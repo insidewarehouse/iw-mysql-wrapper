@@ -2,9 +2,24 @@ var mysql = require("mysql"),
 	Q = require("q"),
 	crypto = require("crypto");
 
-var md5 = function (str) {
+function md5(str) {
 	return crypto.createHash("md5").update(str).digest("hex");
-};
+}
+
+function paramify(list, prefix) {
+	var result = {
+		values: {},
+		tokens: []
+	};
+
+	list.forEach(function (item, itemIndex) {
+		var tokenKey = prefix + itemIndex;
+		result.tokens.push(":" + tokenKey);
+		result.values[tokenKey] = item;
+	});
+
+	return result;
+}
 
 var Database = function (options) {
 	var DB_DEBUG = !!options.showDebugInfo;
@@ -41,20 +56,7 @@ var Database = function (options) {
 		return queryFormat.call(this.pool, query, values);
 	};
 
-	this.paramify = function (list, prefix) {
-		var result = {
-			values: {},
-			tokens: []
-		};
-
-		list.forEach(function (item, itemIndex) {
-			var tokenKey = prefix + itemIndex;
-			result.tokens.push(":" + tokenKey);
-			result.values[tokenKey] = item;
-		});
-
-		return result;
-	};
+	this.paramify = paramify;
 
 	this.query = function (query, args) {
 		var start = process.hrtime();
@@ -72,3 +74,4 @@ var Database = function (options) {
 };
 
 module.exports = Database;
+module.exports.paramify = paramify;
