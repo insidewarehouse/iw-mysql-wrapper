@@ -42,7 +42,7 @@ var Database = function (options) {
 		return formatted;
 	};
 
-	var pool = this.pool = mysql.createPool({
+	var pool = mysql.createPool({
 		host: options.hostname,
 		user: options.username,
 		password: options.password,
@@ -53,7 +53,7 @@ var Database = function (options) {
 	});
 
 	this.queryFormat = function (query, values) {
-		return queryFormat.call(this.pool, query, values);
+		return queryFormat.call(pool, query, values);
 	};
 
 	this.paramify = paramify;
