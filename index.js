@@ -71,6 +71,10 @@ var Database = function (options) {
 			});
 	};
 
+	this.end = function (cb) {
+		return pool.end(cb);
+	};
+
 };
 
 module.exports = Database;
