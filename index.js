@@ -61,10 +61,10 @@ var Database = function (options) {
 	this.query = function (query, args) {
 		var start = process.hrtime();
 		return Q.ninvoke(pool, "query", query, args)
-			.spread(function (rows, fields) {
+			.spread(function (rows) {
 				var diff = process.hrtime(start);
 				if (DB_DEBUG) {
-					console.log("Query", { t: diff[0] + diff[1] / 1e9, queryId: md5(query) })
+					console.log("Query", { t: diff[0] + diff[1] / 1e9, queryId: md5(query) });
 				}
 
 				return rows;

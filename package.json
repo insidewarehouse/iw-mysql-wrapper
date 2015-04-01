@@ -4,7 +4,7 @@
   "description": "Internal wrapper: promises, logging, binding",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "grunt"
   },
   "repository": {
     "type": "git",
@@ -19,5 +19,19 @@
   "dependencies": {
     "mysql": "2.x",
     "q": "1.x"
+  },
+  "devDependencies": {
+    "chai": "2.x",
+    "grunt": "0.4.x",
+    "grunt-checkbranch": "0.3.x",
+    "grunt-checkpending": "0.1.x",
+    "grunt-cli": "0.1.x",
+    "grunt-contrib-jshint": "0.11.x",
+    "grunt-contrib-watch": "0.6.x",
+    "grunt-mocha-test": "0.12.x",
+    "grunt-release": "0.11.x",
+    "load-grunt-tasks": "3.x",
+    "mocha": "2.x",
+    "time-grunt": "1.x"
   }
 }
