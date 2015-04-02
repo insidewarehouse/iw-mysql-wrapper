@@ -1,6 +1,7 @@
 /*global describe, it */
 
-var expect = require("chai").expect,
+var Q = require("q"),
+	expect = require("chai").expect,
 	getConnectionOptions = require("./getConnectionOptions"),
 	Database = require("../index");
 
@@ -137,6 +138,74 @@ describe("iw-mysql-wrapper", function () {
 						});
 				});
 
+			});
+
+		});
+
+		describe("transaction()", function () {
+
+			beforeEach(function () {
+				return db.query("DROP TABLE IF EXISTS `iw_mysql_wrapper_test`;")
+					.then(function () {
+						return db.query("CREATE TABLE `iw_mysql_wrapper_test` ( id INT );");
+					});
+			});
+
+			afterEach(function () {
+				return db.query("DROP TABLE IF EXISTS `iw_mysql_wrapper_test`;");
+			});
+
+			it("should execute multiple queries", function () {
+
+				return db.transaction(function (transactionScope) {
+					return Q.all([
+						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
+						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);")
+					]).then(function verifyBeforeCommit() {
+						return Q.all([
+							db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+								expect(rows).to.eql([], "DB scope: should have no values in the table (transaction pending)");
+							}),
+							transactionScope.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+								expect(rows).to.eql([{id: 1}, {id: 2}], "Transaction scope: should have values in the table");
+							})
+						]);
+					});
+				}).then(function verifyAfterCommit() {
+					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+						expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
+					});
+				});
+
+			});
+
+			it("should rollback upon errors", function () {
+				var savedScope;
+				return db.transaction(function (transactionScope) {
+					savedScope = transactionScope;
+					return Q.all([
+						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
+						transactionScope.query("BAD SQL;")
+					]);
+				}).then(function () {
+
+					var err = new Error("Transaction should have failed!");
+					err.code = "E_DID_NOT_FAIL";
+					throw err;
+
+				}).catch(function verifyAfterRollback(err) {
+
+					expect(err.code).to.eql("ER_PARSE_ERROR");
+					return Q.all([
+						savedScope.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+							expect(rows).to.eql([], "Transaction scope: should be rolled back");
+						}),
+						db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+							expect(rows).to.eql([], "DB scope: should have no values in the table (transaction is rolled back)");
+						})
+					]);
+
+				});
 			});
 
 		});
