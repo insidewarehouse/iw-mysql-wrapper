@@ -5,4 +5,4 @@ matrix:
     - node_js: "0.12"
     - node_js: "io.js"
 before_script:
-  - mysql -e 'create database insidewarehouse_test;'
+  - mysql -e 'create database insidewarehouse_utest;'
