@@ -3,11 +3,11 @@ module.exports = function getConnectionOptions() {
 		hostname: "main.local.insidewarehouse.com",
 		username: "root",
 		password: "",
-		database: "insidewarehouse_test"
+		database: "insidewarehouse_utest"
 	} : {
 		hostname: "localhost",
 		username: "travis",
 		password: "",
-		database: "insidewarehouse_test"
+		database: "insidewarehouse_utest"
 	};
 };
