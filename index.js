@@ -24,7 +24,7 @@ function paramify(list, prefix) {
 var Database = function (options) {
 	var DB_DEBUG = !!options.showDebugInfo;
 
-	// copy/pasted from the mysql lib docs - @todo: probably needs more tests?
+	// copy/pasted from the mysql lib docs
 	var queryFormat = function queryFormat(query, values) {
 		if (!values) return query;
 
