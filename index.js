@@ -36,10 +36,43 @@ var Database = function (options) {
 		}.bind(this));
 
 		if (DB_DEBUG) {
-			console.log("Formatted query", { sql: formatted, queryId: md5(query) });
+			console.log("Formatted query", {sql: formatted, queryId: md5(query)});
 		}
 
 		return formatted;
+	};
+
+	var getQueryFn = function (context) {
+		return function queryFn(query, args) {
+			var start = process.hrtime();
+			return Q.ninvoke(context, "query", query, args).spread(function (rows) {
+				var diff = process.hrtime(start);
+				if (DB_DEBUG) {
+					console.log("Query", {t: diff[0] + diff[1] / 1e9, queryId: md5(query)});
+				}
+
+				return rows;
+			});
+		};
+	};
+
+	var executeTransaction = function (connection, inTransactionFn) {
+		return Q.ninvoke(connection, "beginTransaction")
+			.then(function () {
+				return Q.resolve(inTransactionFn({query: getQueryFn(connection)}));
+			})
+			.then(function () {
+				return Q.ninvoke(connection, "commit");
+			})
+			.catch(function (e) {
+				return Q.ninvoke(connection, "rollback").then(function () {
+					throw e; // rethrow!
+				});
+			})
+			.finally(function () {
+				// note: no clue how to assert this actually happened
+				connection.release();
+			});
 	};
 
 	var pool = mysql.createPool({
@@ -58,17 +91,12 @@ var Database = function (options) {
 
 	this.paramify = paramify;
 
-	this.query = function (query, args) {
-		var start = process.hrtime();
-		return Q.ninvoke(pool, "query", query, args)
-			.spread(function (rows) {
-				var diff = process.hrtime(start);
-				if (DB_DEBUG) {
-					console.log("Query", { t: diff[0] + diff[1] / 1e9, queryId: md5(query) });
-				}
+	this.query = getQueryFn(pool);
 
-				return rows;
-			});
+	this.transaction = function (inTransactionFn) {
+		return Q.ninvoke(pool, "getConnection").then(function (connection) {
+			return executeTransaction(connection, inTransactionFn);
+		});
 	};
 
 	this.end = function (cb) {
