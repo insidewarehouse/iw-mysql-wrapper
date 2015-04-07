@@ -10,7 +10,7 @@ function neverCallMe(msg) {
 		var err = new Error(msg || "Function called, but should not have been called.");
 		err.code = "E_SHOULD_NOT_HAPPEN";
 		throw err;
-	}
+	};
 }
 
 describe("iw-mysql-wrapper", function () {
@@ -165,13 +165,14 @@ describe("iw-mysql-wrapper", function () {
 
 			it("should execute multiple queries", function () {
 
-				var savedScope;
+				var savedScope, verifiedBeforeCommit = false;
 				return db.transaction(function (transactionScope) {
 					savedScope = transactionScope;
 					return Q.all([
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);")
 					]).then(function verifyBeforeCommit() {
+						verifiedBeforeCommit = true;
 						return Q.all([
 							db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
 								expect(rows).to.eql([], "DB scope: should have no values in the table (transaction pending)");
@@ -182,6 +183,7 @@ describe("iw-mysql-wrapper", function () {
 						]);
 					});
 				}).then(function verifyAfterCommit() {
+					expect(verifiedBeforeCommit).to.be.eql(true);
 					return Q.all([
 						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
 							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
@@ -194,7 +196,23 @@ describe("iw-mysql-wrapper", function () {
 
 			});
 
+			it("should execute multiple queries (without returning a promise)", function () {
+
+				// note: this test simply passes, because query() calls are queued internally by mysql,
+				// therefore guaranteeing that "commit" will be called AFTER all the other queries complete
+				return db.transaction(function (transactionScope) {
+					transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);");
+					transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);");
+				}).then(function () {
+					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+						expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
+					});
+				});
+
+			});
+
 			it("should rollback upon errors", function () {
+
 				var savedScope;
 				return db.transaction(function (transactionScope) {
 					savedScope = transactionScope;
