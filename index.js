@@ -61,15 +61,15 @@ var Database = function (options) {
 			transactionComplete = false;
 
 		var transactionScope = {
-				query: function (query, args) {
-					if (transactionComplete) {
-						var error = new Error("Transaction is already closed");
-						error.code ="E_TRANSACTION_CLOSED";
-						return Q.reject(error);
-					}
-					return queryFn(query, args);
+			query: function (query, args) {
+				if (transactionComplete) {
+					var error = new Error("Transaction is already closed");
+					error.code = "E_TRANSACTION_CLOSED";
+					return Q.reject(error);
 				}
-			};
+				return queryFn(query, args);
+			}
+		};
 
 		return Q.ninvoke(connection, "beginTransaction")
 			.then(function () {
