@@ -5,6 +5,14 @@ var Q = require("q"),
 	getConnectionOptions = require("./getConnectionOptions"),
 	Database = require("../index");
 
+function neverCallMe(msg) {
+	return function () {
+		var err = new Error(msg || "Function called, but should not have been called.");
+		err.code = "E_SHOULD_NOT_HAPPEN";
+		throw err;
+	}
+}
+
 describe("iw-mysql-wrapper", function () {
 
 	describe("Database.paramify()", function () {
@@ -157,7 +165,9 @@ describe("iw-mysql-wrapper", function () {
 
 			it("should execute multiple queries", function () {
 
+				var savedScope;
 				return db.transaction(function (transactionScope) {
+					savedScope = transactionScope;
 					return Q.all([
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);")
@@ -172,9 +182,14 @@ describe("iw-mysql-wrapper", function () {
 						]);
 					});
 				}).then(function verifyAfterCommit() {
-					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-						expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
-					});
+					return Q.all([
+						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
+							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
+						}),
+						db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+							expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
+						})
+					]);
 				});
 
 			});
@@ -187,18 +202,12 @@ describe("iw-mysql-wrapper", function () {
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
 						transactionScope.query("BAD SQL;")
 					]);
-				}).then(function () {
-
-					var err = new Error("Transaction should have failed!");
-					err.code = "E_DID_NOT_FAIL";
-					throw err;
-
-				}).catch(function verifyAfterRollback(err) {
+				}).then(neverCallMe("Query should throw a parse error.")).catch(function verifyAfterRollback(err) {
 
 					expect(err.code).to.eql("ER_PARSE_ERROR");
 					return Q.all([
-						savedScope.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-							expect(rows).to.eql([], "Transaction scope: should be rolled back");
+						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
+							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
 						}),
 						db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
 							expect(rows).to.eql([], "DB scope: should have no values in the table (transaction is rolled back)");

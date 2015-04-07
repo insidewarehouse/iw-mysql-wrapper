@@ -57,9 +57,23 @@ var Database = function (options) {
 	};
 
 	var executeTransaction = function (connection, inTransactionFn) {
+		var queryFn = getQueryFn(connection),
+			transactionComplete = false;
+
+		var transactionScope = {
+				query: function (query, args) {
+					if (transactionComplete) {
+						var error = new Error("Transaction is already closed");
+						error.code ="E_TRANSACTION_CLOSED";
+						return Q.reject(error);
+					}
+					return queryFn(query, args);
+				}
+			};
+
 		return Q.ninvoke(connection, "beginTransaction")
 			.then(function () {
-				return Q.resolve(inTransactionFn({query: getQueryFn(connection)}));
+				return Q.resolve(inTransactionFn(transactionScope));
 			})
 			.then(function () {
 				return Q.ninvoke(connection, "commit");
@@ -70,8 +84,8 @@ var Database = function (options) {
 				});
 			})
 			.finally(function () {
-				// note: no clue how to assert this actually happened
-				connection.release();
+				connection.release(); // note: no clue how to assert this actually happened
+				transactionComplete = true;
 			});
 	};
 
