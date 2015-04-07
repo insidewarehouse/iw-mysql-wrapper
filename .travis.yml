@@ -6,3 +6,12 @@ matrix:
     - node_js: "io.js"
 before_script:
   - mysql -e 'create database insidewarehouse_utest;'
+deploy:
+  - provider: npm
+    skip_cleanup: true
+    email: "hello@dominykas.com"
+    api_key:
+      secure: "CrrZPWEwtFvd8GWA1Rlk26SDdJplxeXDz3RF/cJkOQcuF6B+kwgSIZeovhjggRNu+pQ+/KoKcCFFAtUj8O7vXuaP61LxQZR1F0COcUg3owvq7zyNk2hVqhGJGYlRJxCugVqEGkk6ln4BGaZxI9/USykbSTNaEdmAeNvH2MZwspg="
+    on:
+      tags: true
+      node_js: "0.10"
