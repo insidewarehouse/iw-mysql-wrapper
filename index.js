@@ -79,6 +79,7 @@ var Database = function (options) {
 				var allQueriesPromise = inTransactionFn(transactionScope);
 				if (!Q.isPromise(allQueriesPromise)) {
 					allQueriesPromise = Q.all(allQueries);
+					transactionComplete = true;
 				}
 				return allQueriesPromise;
 			})

@@ -150,7 +150,7 @@ describe("iw-mysql-wrapper", function () {
 
 		});
 
-		describe("transaction()", function () {
+		describe("transaction() when handler returns a promise", function () {
 
 			beforeEach(function () {
 				return db.query("DROP TABLE IF EXISTS `iw_mysql_wrapper_test`;")
@@ -163,7 +163,7 @@ describe("iw-mysql-wrapper", function () {
 				return db.query("DROP TABLE IF EXISTS `iw_mysql_wrapper_test`;");
 			});
 
-			it("should execute multiple queries", function () {
+			it("should execute queries and commit", function () {
 
 				var savedScope, verifiedBeforeCommit = false;
 				return db.transaction(function (transactionScope) {
@@ -196,22 +196,7 @@ describe("iw-mysql-wrapper", function () {
 
 			});
 
-			it("should execute multiple queries (without returning a promise)", function () {
-
-				// note: this test simply passes, because query() calls are queued internally by mysql,
-				// therefore guaranteeing that "commit" will be called AFTER all the other queries complete
-				return db.transaction(function (transactionScope) {
-					transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);");
-					transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);");
-				}).then(function () {
-					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-						expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
-					});
-				});
-
-			});
-
-			it("should rollback upon errors", function () {
+			it("should rollback when the returned promise fails", function () {
 
 				var savedScope;
 				return db.transaction(function (transactionScope) {
@@ -235,7 +220,70 @@ describe("iw-mysql-wrapper", function () {
 				});
 			});
 
-			it("should rollback upon errors (without returning a promise)", function () {
+			it("should allow handling of a query error", function () {
+
+				return db.transaction(function (transactionScope) {
+					return Q.all([
+						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
+						transactionScope.query("BAD SQL;").catch(function (e) {
+							// handle error
+							expect(e.code).to.eql("ER_PARSE_ERROR");
+						})
+					]);
+				}).then(function () {
+					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+						expect(rows).to.eql([{id: 1}], "DB scope: should have values in the table (transaction is complete, errors were handled)");
+					});
+				});
+
+			});
+
+			it("should allow chained queries", function () {
+
+				return db.transaction(function (transactionScope) {
+					return transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);")
+						.then(function () {
+							return transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);");
+						});
+				}).then(function () {
+					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+						expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
+					});
+				});
+
+			});
+
+		});
+
+		describe("transaction() when handler does not return a promise", function () {
+
+			beforeEach(function () {
+				return db.query("DROP TABLE IF EXISTS `iw_mysql_wrapper_test`;")
+					.then(function () {
+						return db.query("CREATE TABLE `iw_mysql_wrapper_test` ( id INT );");
+					});
+			});
+
+			afterEach(function () {
+				return db.query("DROP TABLE IF EXISTS `iw_mysql_wrapper_test`;");
+			});
+
+			it("should execute queries and commit", function () {
+
+				// note: this test simply passes, because query() calls are queued internally by mysql,
+				// therefore guaranteeing that "commit" will be called AFTER all the other queries complete
+				return db.transaction(function (transactionScope) {
+					transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);");
+					transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);");
+				}).then(function () {
+					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+						expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
+					});
+				});
+
+			});
+
+			it("should rollback when a query fails", function () {
 
 				var savedScope;
 				return db.transaction(function (transactionScope) {
@@ -257,6 +305,22 @@ describe("iw-mysql-wrapper", function () {
 					]);
 
 				});
+			});
+
+			it("should not allow chained queries", function (done) {
+
+				db.transaction(function (transactionScope) {
+					transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);").then(function () {
+						// query() should fail here, because we didn't return a promise and as soon as the first query executed - transaction was committed
+						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);")
+							.then(neverCallMe("Transaction should be closed"))
+							.catch(function (err) {
+								expect(err.code).to.eql("E_TRANSACTION_CLOSED");
+								done();
+							});
+					});
+				});
+
 			});
 
 		});
