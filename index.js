@@ -58,7 +58,8 @@ var Database = function (options) {
 
 	var executeTransaction = function (connection, inTransactionFn) {
 		var queryFn = getQueryFn(connection),
-			transactionComplete = false;
+			transactionComplete = false,
+			allQueries = [];
 
 		var transactionScope = {
 			query: function (query, args) {
@@ -67,25 +68,37 @@ var Database = function (options) {
 					error.code = "E_TRANSACTION_CLOSED";
 					return Q.reject(error);
 				}
-				return queryFn(query, args);
+				var queryPromise = queryFn(query, args);
+				allQueries.push(queryPromise);
+				return queryPromise;
 			}
 		};
 
 		return Q.ninvoke(connection, "beginTransaction")
 			.then(function () {
-				return Q.resolve(inTransactionFn(transactionScope));
+				var allQueriesPromise = inTransactionFn(transactionScope);
+				if (!Q.isPromise(allQueriesPromise)) {
+					allQueriesPromise = Q.all(allQueries);
+					transactionComplete = true;
+				}
+				return allQueriesPromise;
 			})
 			.then(function () {
+				// note: disable further queries BEFORE running commit, because finally() runs in
+				// asynchronously AFTER commit and there might be queries in between - impossible to test
+				transactionComplete = true;
 				return Q.ninvoke(connection, "commit");
 			})
 			.catch(function (e) {
+				// note: disable further queries BEFORE running rollback, because finally() runs in
+				// asynchronously AFTER rollback and there might be queries in between - impossible to test
+				transactionComplete = true;
 				return Q.ninvoke(connection, "rollback").then(function () {
 					throw e; // rethrow!
 				});
 			})
 			.finally(function () {
 				connection.release(); // note: no clue how to assert this actually happened
-				transactionComplete = true;
 			});
 	};
 
