@@ -235,6 +235,30 @@ describe("iw-mysql-wrapper", function () {
 				});
 			});
 
+			it("should rollback upon errors (without returning a promise)", function () {
+
+				var savedScope;
+				return db.transaction(function (transactionScope) {
+					savedScope = transactionScope;
+
+					transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);");
+					transactionScope.query("BAD SQL;");
+
+				}).then(neverCallMe("Query should throw a parse error.")).catch(function verifyAfterRollback(err) {
+
+					expect(err.code).to.eql("ER_PARSE_ERROR");
+					return Q.all([
+						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
+							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
+						}),
+						db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
+							expect(rows).to.eql([], "DB scope: should have no values in the table (transaction is rolled back)");
+						})
+					]);
+
+				});
+			});
+
 		});
 
 	});

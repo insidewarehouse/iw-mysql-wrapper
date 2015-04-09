@@ -58,7 +58,8 @@ var Database = function (options) {
 
 	var executeTransaction = function (connection, inTransactionFn) {
 		var queryFn = getQueryFn(connection),
-			transactionComplete = false;
+			transactionComplete = false,
+			allQueries = [];
 
 		var transactionScope = {
 			query: function (query, args) {
@@ -67,13 +68,19 @@ var Database = function (options) {
 					error.code = "E_TRANSACTION_CLOSED";
 					return Q.reject(error);
 				}
-				return queryFn(query, args);
+				var queryPromise = queryFn(query, args);
+				allQueries.push(queryPromise);
+				return queryPromise;
 			}
 		};
 
 		return Q.ninvoke(connection, "beginTransaction")
 			.then(function () {
-				return Q.resolve(inTransactionFn(transactionScope));
+				var allQueriesPromise = inTransactionFn(transactionScope);
+				if (!Q.isPromise(allQueriesPromise)) {
+					allQueriesPromise = Q.all(allQueries);
+				}
+				return allQueriesPromise;
 			})
 			.then(function () {
 				return Q.ninvoke(connection, "commit");
@@ -84,8 +91,8 @@ var Database = function (options) {
 				});
 			})
 			.finally(function () {
-				connection.release(); // note: no clue how to assert this actually happened
 				transactionComplete = true;
+				connection.release(); // note: no clue how to assert this actually happened
 			});
 	};
 
