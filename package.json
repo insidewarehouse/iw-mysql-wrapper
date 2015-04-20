@@ -1,6 +1,6 @@
 {
   "name": "iw-mysql-wrapper",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Internal wrapper: promises, logging, binding",
   "main": "index.js",
   "scripts": {
