@@ -1,6 +1,6 @@
 {
   "name": "iw-mysql-wrapper",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "description": "Moved to https://www.npmjs.com/package/@insidewarehouse/mysql-wrapper",
   "main": "index.js",
   "scripts": {
