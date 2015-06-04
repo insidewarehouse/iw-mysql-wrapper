@@ -1,21 +1,21 @@
 {
   "name": "iw-mysql-wrapper",
   "version": "2.3.2",
-  "description": "Internal wrapper: promises, logging, binding",
+  "description": "Moved to https://www.npmjs.com/package/@insidewarehouse/mysql-wrapper",
   "main": "index.js",
   "scripts": {
     "test": "grunt"
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:insidewarehouse/iw-mysql-wrapper.git"
+    "url": "git@github.com:insidewarehouse/mysql-wrapper.git"
   },
   "author": "Dominykas Blyžė, InsideWarehouse <hello@dominykas.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/insidewarehouse/iw-mysql-wrapper/issues"
+    "url": "https://github.com/insidewarehouse/mysql-wrapper/issues"
   },
-  "homepage": "https://github.com/insidewarehouse/iw-mysql-wrapper",
+  "homepage": "https://github.com/insidewarehouse/mysql-wrapper",
   "dependencies": {
     "mysql": "2.x",
     "q": "1.x"
