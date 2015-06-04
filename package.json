@@ -1,7 +1,7 @@
 {
-  "name": "iw-mysql-wrapper",
+  "name": "@insidewarehouse/mysql-wrapper",
   "version": "2.3.4",
-  "description": "Moved to https://www.npmjs.com/package/@insidewarehouse/mysql-wrapper",
+  "description": "Internal wrapper for the great mysql module: promises, logging, binding, transactions",
   "main": "index.js",
   "scripts": {
     "test": "grunt"
