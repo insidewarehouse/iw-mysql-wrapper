@@ -1,6 +1,6 @@
 {
   "name": "@insidewarehouse/mysql-wrapper",
-  "version": "2.3.7",
+  "version": "2.4.0",
   "description": "Internal wrapper for the great mysql module: promises, logging, binding, transactions",
   "main": "index.js",
   "scripts": {
