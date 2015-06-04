@@ -3,6 +3,7 @@
 var Q = require("q"),
 	expect = require("chai").expect,
 	getConnectionOptions = require("./getConnectionOptions"),
+	getDsn = require("./getDsn"),
 	Database = require("../index");
 
 function neverCallMe(msg) {
@@ -323,6 +324,44 @@ describe("iw-mysql-wrapper", function () {
 
 			});
 
+		});
+
+	});
+
+	describe("Database() with DSN", function () {
+
+		var db;
+
+		afterEach(function (done) {
+			db.end(done);
+		});
+
+		it("should accept DSN string via options", function () {
+			db = new Database({dsn: getDsn()});
+			return db.query("SHOW DATABASES;")
+				.then(function (rows) {
+					expect(rows.length).to.be.greaterThan(1);
+					expect(rows).to.contain({"Database": "insidewarehouse_utest"});
+				});
+		});
+
+		it("should run the query in DB with params", function () {
+			db = new Database({dsn: getDsn()});
+			var paramified = db.paramify(["insidewarehouse_utest"], "db");
+			return db.query("SHOW DATABASES WHERE `Database` IN (" + paramified.tokens.join(",") + ");", paramified.values)
+				.then(function (rows) {
+					expect(rows).to.eql([{"Database": "insidewarehouse_utest"}]);
+				});
+		});
+
+		it("shjould allow multiple statements", function () {
+			db = new Database({dsn: getDsn(), multipleStatements: true});
+			return db.query("SHOW DATABASES; SHOW DATABASES;")
+				.then(function (results) {
+					expect(results.length).to.eql(2);
+					expect(results[0]).to.contain({"Database": "insidewarehouse_utest"});
+					expect(results[1]).to.contain({"Database": "insidewarehouse_utest"});
+				});
 		});
 
 	});

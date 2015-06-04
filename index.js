@@ -102,15 +102,21 @@ var Database = function (options) {
 			});
 	};
 
-	var pool = mysql.createPool({
-		host: options.hostname,
-		user: options.username,
-		password: options.password,
-		database: options.database,
+	var parsedDsn = {};
+	if (options.dsn) {
+		parsedDsn = require("mysql/lib/ConnectionConfig").parseUrl(options.dsn);
+	}
+
+	var poolConfig = {
+		host: options.hostname || parsedDsn.host,
+		user: options.username || parsedDsn.user,
+		password: options.password || parsedDsn.password,
+		database: options.database || parsedDsn.database,
 		connectionLimit: 100,
 		queryFormat: queryFormat,
 		multipleStatements: !!options.multipleStatements
-	});
+	};
+	var pool = mysql.createPool(poolConfig);
 
 	this.queryFormat = function (query, values) {
 		return queryFormat.call(pool, query, values);
