@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "blanket": "1.x",
-    "chai": "2.x",
+    "chai": "3.x",
     "grunt": "0.4.x",
     "grunt-bump": "0.3.x",
     "grunt-checkbranch": "1.x",
