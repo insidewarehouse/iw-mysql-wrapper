@@ -6,6 +6,9 @@
   "scripts": {
     "test": "grunt"
   },
+  "files": [
+    "index.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git@github.com:insidewarehouse/mysql-wrapper.git"
@@ -16,6 +19,10 @@
     "url": "https://github.com/insidewarehouse/mysql-wrapper/issues"
   },
   "homepage": "https://github.com/insidewarehouse/mysql-wrapper",
+  "engines": {
+    "node": "0.12.x",
+    "iojs": "*"
+  },
   "dependencies": {
     "mysql": "2.x",
     "q": "1.x"
