@@ -103,15 +103,15 @@ describe("iw-mysql-wrapper", function () {
 				return db.query("SHOW DATABASES;")
 					.then(function (rows) {
 						expect(rows.length).to.be.greaterThan(1);
-						expect(rows).to.contain({"Database": "insidewarehouse_utest"});
+						expect(rows).to.contain({"Database": "insidewarehouse_integration_test"});
 					});
 			});
 
 			it("should run the query in DB with params", function () {
-				var paramified = db.paramify(["insidewarehouse_utest"], "db");
+				var paramified = db.paramify(["insidewarehouse_integration_test"], "db");
 				return db.query("SHOW DATABASES WHERE `Database` IN (" + paramified.tokens.join(",") + ");", paramified.values)
 					.then(function (rows) {
-						expect(rows).to.eql([{"Database": "insidewarehouse_utest"}]);
+						expect(rows).to.eql([{"Database": "insidewarehouse_integration_test"}]);
 					});
 			});
 
@@ -142,8 +142,8 @@ describe("iw-mysql-wrapper", function () {
 					return multiDb.query("SHOW DATABASES; SHOW DATABASES;")
 						.then(function (results) {
 							expect(results.length).to.eql(2);
-							expect(results[0]).to.contain({"Database": "insidewarehouse_utest"});
-							expect(results[1]).to.contain({"Database": "insidewarehouse_utest"});
+							expect(results[0]).to.contain({"Database": "insidewarehouse_integration_test"});
+							expect(results[1]).to.contain({"Database": "insidewarehouse_integration_test"});
 						});
 				});
 
@@ -341,16 +341,16 @@ describe("iw-mysql-wrapper", function () {
 			return db.query("SHOW DATABASES;")
 				.then(function (rows) {
 					expect(rows.length).to.be.greaterThan(1);
-					expect(rows).to.contain({"Database": "insidewarehouse_utest"});
+					expect(rows).to.contain({"Database": "insidewarehouse_integration_test"});
 				});
 		});
 
 		it("should run the query in DB with params", function () {
 			db = new Database({dsn: getDsn()});
-			var paramified = db.paramify(["insidewarehouse_utest"], "db");
+			var paramified = db.paramify(["insidewarehouse_integration_test"], "db");
 			return db.query("SHOW DATABASES WHERE `Database` IN (" + paramified.tokens.join(",") + ");", paramified.values)
 				.then(function (rows) {
-					expect(rows).to.eql([{"Database": "insidewarehouse_utest"}]);
+					expect(rows).to.eql([{"Database": "insidewarehouse_integration_test"}]);
 				});
 		});
 
@@ -359,8 +359,8 @@ describe("iw-mysql-wrapper", function () {
 			return db.query("SHOW DATABASES; SHOW DATABASES;")
 				.then(function (results) {
 					expect(results.length).to.eql(2);
-					expect(results[0]).to.contain({"Database": "insidewarehouse_utest"});
-					expect(results[1]).to.contain({"Database": "insidewarehouse_utest"});
+					expect(results[0]).to.contain({"Database": "insidewarehouse_integration_test"});
+					expect(results[1]).to.contain({"Database": "insidewarehouse_integration_test"});
 				});
 		});
 

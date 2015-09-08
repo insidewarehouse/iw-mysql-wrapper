@@ -1,13 +1,13 @@
 module.exports = function getConnectionOptions() {
 	return process.env.IW_ENVIRONMENT === "local" ? {
-		hostname: "main.local.insidewarehouse.com",
+		hostname: "db.local.insidewarehouse.com",
 		username: "root",
 		password: "",
-		database: "insidewarehouse_utest"
+		database: "insidewarehouse_integration_test"
 	} : {
 		hostname: "localhost",
 		username: "travis",
 		password: "",
-		database: "insidewarehouse_utest"
+		database: "insidewarehouse_integration_test"
 	};
 };

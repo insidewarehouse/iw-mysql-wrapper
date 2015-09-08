@@ -8,7 +8,7 @@ matrix:
     - node_js: "0.12"
     - node_js: "io.js"
 before_script:
-  - mysql -e 'create database insidewarehouse_utest;'
+  - mysql -e 'create database insidewarehouse_integration_test;'
 deploy:
   - provider: npm
     skip_cleanup: true
