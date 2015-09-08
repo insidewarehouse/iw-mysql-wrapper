@@ -4,8 +4,8 @@ before_install:
   npm i -g npm
 matrix:
   include:
-    - node_js: "0.10"
     - node_js: "0.12"
+    - node_js: "4.x"
     - node_js: "io.js"
 before_script:
   - mysql -e 'create database insidewarehouse_integration_test;'
@@ -17,4 +17,4 @@ deploy:
       secure: "XK0t6hIMH19Juz+7gFRybmoSLDrcJN0yqqtHopFZxZhcFJtNHzqCQNiy/aFe/3IzmhgdAtXnKvuYLkRcBurgItjHQkaACCibAHWVEW+KqgLxcka/8GzEP826LEh2bvH3pYLqXzWSo2axkZBmSR0zpwd+kzBO24qyfLGGUXzkh6I="
     on:
       tags: true
-      node_js: "0.12"
+      node_js: "4.x"
