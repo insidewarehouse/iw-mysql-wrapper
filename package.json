@@ -24,6 +24,7 @@
     "iojs": "*"
   },
   "dependencies": {
+    "denodeify": "1.x",
     "mysql": "2.x",
     "q": "1.x"
   },

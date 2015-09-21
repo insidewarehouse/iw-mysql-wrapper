@@ -21,6 +21,14 @@ function paramify(list, prefix) {
 	return result;
 }
 
+function isThenable(obj) {
+	return obj && typeof(obj.then) === "function";
+}
+
+function promisedCall() {
+	return Q.ninvoke.apply(Q, arguments);
+}
+
 var Database = function (options) {
 	var DB_DEBUG = !!options.showDebugInfo;
 
@@ -45,7 +53,7 @@ var Database = function (options) {
 	var getQueryFn = function (context) {
 		return function queryFn(query, args) {
 			var start = process.hrtime();
-			return Q.ninvoke(context, "query", query, args).spread(function (rows) {
+			return promisedCall(context, "query", query, args).spread(function (rows) {
 				var diff = process.hrtime(start);
 				if (DB_DEBUG) {
 					console.log("Query", {t: diff[0] + diff[1] / 1e9, queryId: md5(query)});
@@ -66,7 +74,7 @@ var Database = function (options) {
 				if (transactionComplete) {
 					var error = new Error("Transaction is already closed");
 					error.code = "E_TRANSACTION_CLOSED";
-					return Q.reject(error);
+					return Promise.reject(error);
 				}
 				var queryPromise = queryFn(query, args);
 				allQueries.push(queryPromise);
@@ -74,11 +82,11 @@ var Database = function (options) {
 			}
 		};
 
-		return Q.ninvoke(connection, "beginTransaction")
+		return promisedCall(connection, "beginTransaction")
 			.then(function () {
 				var allQueriesPromise = inTransactionFn(transactionScope);
-				if (!Q.isPromise(allQueriesPromise)) {
-					allQueriesPromise = Q.all(allQueries);
+				if (!isThenable(allQueriesPromise)) {
+					allQueriesPromise = Promise.all(allQueries);
 					transactionComplete = true;
 				}
 				return allQueriesPromise;
@@ -87,13 +95,13 @@ var Database = function (options) {
 				// note: disable further queries BEFORE running commit, because finally() runs in
 				// asynchronously AFTER commit and there might be queries in between - impossible to test
 				transactionComplete = true;
-				return Q.ninvoke(connection, "commit");
+				return promisedCall(connection, "commit");
 			})
 			.catch(function (e) {
 				// note: disable further queries BEFORE running rollback, because finally() runs in
 				// asynchronously AFTER rollback and there might be queries in between - impossible to test
 				transactionComplete = true;
-				return Q.ninvoke(connection, "rollback").then(function () {
+				return promisedCall(connection, "rollback").then(function () {
 					throw e; // rethrow!
 				});
 			})
@@ -127,7 +135,7 @@ var Database = function (options) {
 	this.query = getQueryFn(pool);
 
 	this.transaction = function (inTransactionFn) {
-		return Q.ninvoke(pool, "getConnection").then(function (connection) {
+		return promisedCall(pool, "getConnection").then(function (connection) {
 			return executeTransaction(connection, inTransactionFn);
 		});
 	};
