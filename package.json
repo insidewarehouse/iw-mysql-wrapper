@@ -24,8 +24,7 @@
     "iojs": "*"
   },
   "dependencies": {
-    "mysql": "2.x",
-    "q": "1.x"
+    "mysql": "2.x"
   },
   "devDependencies": {
     "blanket": "1.x",

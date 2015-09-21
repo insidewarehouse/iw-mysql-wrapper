@@ -1,7 +1,8 @@
-/*global describe, it */
+/*global describe, it, beforeEach, afterEach */
 
-var Q = require("q"),
-	expect = require("chai").expect,
+"use strict";
+
+var expect = require("chai").expect,
 	getConnectionOptions = require("./getConnectionOptions"),
 	getDsn = require("./getDsn"),
 	Database = require("../index");
@@ -169,12 +170,12 @@ describe("iw-mysql-wrapper", function () {
 				var savedScope, verifiedBeforeCommit = false;
 				return db.transaction(function (transactionScope) {
 					savedScope = transactionScope;
-					return Q.all([
+					return Promise.all([
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);")
 					]).then(function verifyBeforeCommit() {
 						verifiedBeforeCommit = true;
-						return Q.all([
+						return Promise.all([
 							db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
 								expect(rows).to.eql([], "DB scope: should have no values in the table (transaction pending)");
 							}),
@@ -185,7 +186,7 @@ describe("iw-mysql-wrapper", function () {
 					});
 				}).then(function verifyAfterCommit() {
 					expect(verifiedBeforeCommit).to.be.eql(true);
-					return Q.all([
+					return Promise.all([
 						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
 							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
 						}),
@@ -202,14 +203,14 @@ describe("iw-mysql-wrapper", function () {
 				var savedScope;
 				return db.transaction(function (transactionScope) {
 					savedScope = transactionScope;
-					return Q.all([
+					return Promise.all([
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
 						transactionScope.query("BAD SQL;")
 					]);
 				}).then(neverCallMe("Query should throw a parse error.")).catch(function verifyAfterRollback(err) {
 
 					expect(err.code).to.eql("ER_PARSE_ERROR");
-					return Q.all([
+					return Promise.all([
 						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
 							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
 						}),
@@ -224,7 +225,7 @@ describe("iw-mysql-wrapper", function () {
 			it("should allow handling of a query error", function () {
 
 				return db.transaction(function (transactionScope) {
-					return Q.all([
+					return Promise.all([
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
 						transactionScope.query("BAD SQL;").catch(function (e) {
 							// handle error
@@ -296,7 +297,7 @@ describe("iw-mysql-wrapper", function () {
 				}).then(neverCallMe("Query should throw a parse error.")).catch(function verifyAfterRollback(err) {
 
 					expect(err.code).to.eql("ER_PARSE_ERROR");
-					return Q.all([
+					return Promise.all([
 						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
 							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
 						}),

@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = function getConnectionOptions() {
 	return process.env.IW_ENVIRONMENT === "local" ? {
 		hostname: "db.local.insidewarehouse.com",

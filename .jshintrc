@@ -8,5 +8,9 @@
   "nonbsp": true,
   "noempty": true,
   "unused": true,
-  "multistr": true
+  "multistr": true,
+  "strict": true,
+  "globals": {
+    "Promise": true
+  }
 }

@@ -1,5 +1,6 @@
+"use strict";
+
 var mysql = require("mysql"),
-	Q = require("q"),
 	crypto = require("crypto");
 
 function md5(str) {
@@ -19,6 +20,25 @@ function paramify(list, prefix) {
 	});
 
 	return result;
+}
+
+function isThenable(obj) {
+	return obj && typeof(obj.then) === "function";
+}
+
+function slice(arrayLike, n) {
+	return Array.prototype.slice.call(arrayLike, n);
+}
+
+function promisedCall(obj, fnName) {
+	var args = slice(arguments, 2);
+	return new Promise(function (resolve, reject) {
+		args.push(function (err, val) {
+			// note: ES6 standard promises only return one value, but we were already losing the `fields` results from mysql.query()
+			return err ? reject(err) : resolve(val);
+		});
+		obj[fnName].apply(obj, args);
+	});
 }
 
 var Database = function (options) {
@@ -45,7 +65,7 @@ var Database = function (options) {
 	var getQueryFn = function (context) {
 		return function queryFn(query, args) {
 			var start = process.hrtime();
-			return Q.ninvoke(context, "query", query, args).spread(function (rows) {
+			return promisedCall(context, "query", query, args).then(function (rows) {
 				var diff = process.hrtime(start);
 				if (DB_DEBUG) {
 					console.log("Query", {t: diff[0] + diff[1] / 1e9, queryId: md5(query)});
@@ -66,7 +86,7 @@ var Database = function (options) {
 				if (transactionComplete) {
 					var error = new Error("Transaction is already closed");
 					error.code = "E_TRANSACTION_CLOSED";
-					return Q.reject(error);
+					return Promise.reject(error);
 				}
 				var queryPromise = queryFn(query, args);
 				allQueries.push(queryPromise);
@@ -74,11 +94,11 @@ var Database = function (options) {
 			}
 		};
 
-		return Q.ninvoke(connection, "beginTransaction")
+		return promisedCall(connection, "beginTransaction")
 			.then(function () {
 				var allQueriesPromise = inTransactionFn(transactionScope);
-				if (!Q.isPromise(allQueriesPromise)) {
-					allQueriesPromise = Q.all(allQueries);
+				if (!isThenable(allQueriesPromise)) {
+					allQueriesPromise = Promise.all(allQueries);
 					transactionComplete = true;
 				}
 				return allQueriesPromise;
@@ -87,18 +107,18 @@ var Database = function (options) {
 				// note: disable further queries BEFORE running commit, because finally() runs in
 				// asynchronously AFTER commit and there might be queries in between - impossible to test
 				transactionComplete = true;
-				return Q.ninvoke(connection, "commit");
+				return promisedCall(connection, "commit").then(function () {
+					connection.release(); // note: no clue how to assert this actually happened
+				});
 			})
 			.catch(function (e) {
 				// note: disable further queries BEFORE running rollback, because finally() runs in
 				// asynchronously AFTER rollback and there might be queries in between - impossible to test
 				transactionComplete = true;
-				return Q.ninvoke(connection, "rollback").then(function () {
+				return promisedCall(connection, "rollback").then(function () {
+					connection.release(); // note: no clue how to assert this actually happened
 					throw e; // rethrow!
 				});
-			})
-			.finally(function () {
-				connection.release(); // note: no clue how to assert this actually happened
 			});
 	};
 
@@ -127,7 +147,7 @@ var Database = function (options) {
 	this.query = getQueryFn(pool);
 
 	this.transaction = function (inTransactionFn) {
-		return Q.ninvoke(pool, "getConnection").then(function (connection) {
+		return promisedCall(pool, "getConnection").then(function (connection) {
 			return executeTransaction(connection, inTransactionFn);
 		});
 	};
