@@ -14,7 +14,7 @@ deploy:
     skip_cleanup: true
     email: "hello@dominykas.com"
     api_key:
-      secure: "XK0t6hIMH19Juz+7gFRybmoSLDrcJN0yqqtHopFZxZhcFJtNHzqCQNiy/aFe/3IzmhgdAtXnKvuYLkRcBurgItjHQkaACCibAHWVEW+KqgLxcka/8GzEP826LEh2bvH3pYLqXzWSo2axkZBmSR0zpwd+kzBO24qyfLGGUXzkh6I="
+      secure: "Gl1GeNpnbUChIaxGaJfzcCDBqsLcONxuOd0gq4O9VcM21zxdxdijMi9N5Hxztd6Bqx22er4AF6SrNydhVSiwtP2ocvcD+E6bI1DURwpj3wUI4y9IDAwW1uPQtcfmcs8fmvuduCMo8YPEP4v3m9er2ruyUK6tPztOq+S4WwgWULw="
     on:
       tags: true
       node_js: "4"
