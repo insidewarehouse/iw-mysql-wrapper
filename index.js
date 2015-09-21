@@ -1,7 +1,6 @@
 "use strict";
 
 var mysql = require("mysql"),
-	Q = require("q"),
 	crypto = require("crypto");
 
 function md5(str) {
@@ -27,8 +26,19 @@ function isThenable(obj) {
 	return obj && typeof(obj.then) === "function";
 }
 
-function promisedCall() {
-	return Q.ninvoke.apply(Q, arguments);
+function slice(arrayLike, n) {
+	return Array.prototype.slice.call(arrayLike, n);
+}
+
+function promisedCall(obj, fnName) {
+	var args = slice(arguments, 2);
+	return new Promise(function (resolve, reject) {
+		args.push(function (err, val) {
+			// note: ES6 standard promises only return one value, but we were already losing the `fields` results from mysql.query()
+			return err ? reject(err) : resolve(val);
+		});
+		obj[fnName].apply(obj, args);
+	});
 }
 
 var Database = function (options) {
@@ -55,7 +65,7 @@ var Database = function (options) {
 	var getQueryFn = function (context) {
 		return function queryFn(query, args) {
 			var start = process.hrtime();
-			return promisedCall(context, "query", query, args).spread(function (rows) {
+			return promisedCall(context, "query", query, args).then(function (rows) {
 				var diff = process.hrtime(start);
 				if (DB_DEBUG) {
 					console.log("Query", {t: diff[0] + diff[1] / 1e9, queryId: md5(query)});
@@ -97,18 +107,18 @@ var Database = function (options) {
 				// note: disable further queries BEFORE running commit, because finally() runs in
 				// asynchronously AFTER commit and there might be queries in between - impossible to test
 				transactionComplete = true;
-				return promisedCall(connection, "commit");
+				return promisedCall(connection, "commit").then(function () {
+					connection.release(); // note: no clue how to assert this actually happened
+				});
 			})
 			.catch(function (e) {
 				// note: disable further queries BEFORE running rollback, because finally() runs in
 				// asynchronously AFTER rollback and there might be queries in between - impossible to test
 				transactionComplete = true;
 				return promisedCall(connection, "rollback").then(function () {
+					connection.release(); // note: no clue how to assert this actually happened
 					throw e; // rethrow!
 				});
-			})
-			.finally(function () {
-				connection.release(); // note: no clue how to assert this actually happened
 			});
 	};
 
