@@ -1,6 +1,6 @@
 {
   "name": "@insidewarehouse/mysql-wrapper",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "Internal wrapper for the great mysql module: promises, logging, binding, transactions",
   "main": "index.js",
   "scripts": {
@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/insidewarehouse/mysql-wrapper",
   "engines": {
-    "node": "0.12.x 4.x",
+    "node": "0.12.x || 4.x",
     "iojs": "*"
   },
   "dependencies": {
