@@ -18,25 +18,18 @@ module.exports = function (grunt) {
 		},
 		"mochaTest": {
 			"test": {
-				options: {
-					reporter: "spec",
-					require: "test/blanket"
-				},
 				src: ["test/**/*.test.js"]
-			},
+			}
+		},
+		"mocha_istanbul": {
 			"coverage": {
-				options: {
-					reporter: "html-cov",
-					quiet: true,
-					captureFile: "coverage/coverage.html"
-				},
 				src: ["test/**/*.test.js"]
 			}
 		},
 		"watch": {
 			"test": {
-				files: ["**/*.js", "test/**/*.js"],
-				tasks: ["jshint:watch", "test"]
+				"files": ["*.js", "**/*.js", "!node_modules/**", "!build/**"],
+				"tasks": ["jshint:watch", "mochaTest"]
 			}
 		},
 		"bump": {
@@ -51,7 +44,7 @@ module.exports = function (grunt) {
 	});
 
 	grunt.registerTask("default", ["jshint:dist", "test"]);
-	grunt.registerTask("test", ["mochaTest"]);
+	grunt.registerTask("test", ["mocha_istanbul"]);
 
 	grunt.registerTask("release", function () {
 		var bump = grunt.option("bump");

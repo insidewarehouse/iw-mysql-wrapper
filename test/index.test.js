@@ -2,7 +2,7 @@
 
 "use strict";
 
-var expect = require("chai").expect,
+var expect = require("expect"),
 	getConnectionOptions = require("./getConnectionOptions"),
 	getDsn = require("./getDsn"),
 	Database = require("../index");
@@ -21,7 +21,7 @@ describe("iw-mysql-wrapper", function () {
 
 		it("should return empty values/tokens when list is empty", function () {
 			var result = Database.paramify([], "pfx");
-			expect(result).to.eql({
+			expect(result).toEqual({
 				values: {},
 				tokens: []
 			});
@@ -29,7 +29,7 @@ describe("iw-mysql-wrapper", function () {
 
 		it("should create a values/tokens map for the list", function () {
 			var result = Database.paramify(["one", "two"], "pfx");
-			expect(result).to.eql({
+			expect(result).toEqual({
 				values: {
 					"pfx0": "one",
 					"pfx1": "two"
@@ -55,7 +55,7 @@ describe("iw-mysql-wrapper", function () {
 
 			it("should return empty values/tokens when list is empty", function () {
 				var result = db.paramify([], "pfx");
-				expect(result).to.eql({
+				expect(result).toEqual({
 					values: {},
 					tokens: []
 				});
@@ -63,7 +63,7 @@ describe("iw-mysql-wrapper", function () {
 
 			it("should create a values/tokens map for the list", function () {
 				var result = db.paramify(["one", "two"], "pfx");
-				expect(result).to.eql({
+				expect(result).toEqual({
 					values: {
 						"pfx0": "one",
 						"pfx1": "two"
@@ -82,18 +82,18 @@ describe("iw-mysql-wrapper", function () {
 					value1: "ohai",
 					value2: "ohai'; bobby tables"
 				};
-				expect(db.queryFormat(query, values)).to.eql("SELECT * FROM test WHERE col1 = 'ohai' and col2 = 'ohai\\'; bobby tables' and col3 = 'ohai';");
+				expect(db.queryFormat(query, values)).toEqual("SELECT * FROM test WHERE col1 = 'ohai' and col2 = 'ohai\\'; bobby tables' and col3 = 'ohai';");
 			});
 
 			it("should leave alone values which aren't present", function () {
 				var query = "SELECT * FROM test WHERE col1 = :value1;";
 				var values = {};
-				expect(db.queryFormat(query, values)).to.eql("SELECT * FROM test WHERE col1 = :value1;");
+				expect(db.queryFormat(query, values)).toEqual("SELECT * FROM test WHERE col1 = :value1;");
 			});
 
 			it("should leave query alone when no values present", function () {
 				var query = "SELECT * FROM test WHERE col1 = :value1;";
-				expect(db.queryFormat(query)).to.eql("SELECT * FROM test WHERE col1 = :value1;");
+				expect(db.queryFormat(query)).toEqual("SELECT * FROM test WHERE col1 = :value1;");
 			});
 
 		});
@@ -103,8 +103,8 @@ describe("iw-mysql-wrapper", function () {
 			it("should run the query in DB", function () {
 				return db.query("SHOW DATABASES;")
 					.then(function (rows) {
-						expect(rows.length).to.be.greaterThan(1);
-						expect(rows).to.contain({"Database": "insidewarehouse_integration_test"});
+						expect(rows.length).toBeGreaterThan(1);
+						expect(rows).toInclude({"Database": "insidewarehouse_integration_test"});
 					});
 			});
 
@@ -112,7 +112,7 @@ describe("iw-mysql-wrapper", function () {
 				var paramified = db.paramify(["insidewarehouse_integration_test"], "db");
 				return db.query("SHOW DATABASES WHERE `Database` IN (" + paramified.tokens.join(",") + ");", paramified.values)
 					.then(function (rows) {
-						expect(rows).to.eql([{"Database": "insidewarehouse_integration_test"}]);
+						expect(rows).toEqual([{"Database": "insidewarehouse_integration_test"}]);
 					});
 			});
 
@@ -122,7 +122,7 @@ describe("iw-mysql-wrapper", function () {
 						throw new Error("Should not get here!");
 					})
 					.catch(function (e) {
-						expect(e.code).to.eql("ER_PARSE_ERROR");
+						expect(e.code).toEqual("ER_PARSE_ERROR");
 					});
 			});
 
@@ -142,9 +142,9 @@ describe("iw-mysql-wrapper", function () {
 				it("should allow multiple statements", function () {
 					return multiDb.query("SHOW DATABASES; SHOW DATABASES;")
 						.then(function (results) {
-							expect(results.length).to.eql(2);
-							expect(results[0]).to.contain({"Database": "insidewarehouse_integration_test"});
-							expect(results[1]).to.contain({"Database": "insidewarehouse_integration_test"});
+							expect(results.length).toEqual(2);
+							expect(results[0]).toInclude({"Database": "insidewarehouse_integration_test"});
+							expect(results[1]).toInclude({"Database": "insidewarehouse_integration_test"});
 						});
 				});
 
@@ -177,21 +177,21 @@ describe("iw-mysql-wrapper", function () {
 						verifiedBeforeCommit = true;
 						return Promise.all([
 							db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-								expect(rows).to.eql([], "DB scope: should have no values in the table (transaction pending)");
+								expect(rows).toEqual([], "DB scope: should have no values in the table (transaction pending)");
 							}),
 							transactionScope.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-								expect(rows).to.eql([{id: 1}, {id: 2}], "Transaction scope: should have values in the table");
+								expect(rows).toEqual([{id: 1}, {id: 2}], "Transaction scope: should have values in the table");
 							})
 						]);
 					});
 				}).then(function verifyAfterCommit() {
-					expect(verifiedBeforeCommit).to.be.eql(true);
+					expect(verifiedBeforeCommit).toEqual(true);
 					return Promise.all([
 						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
-							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
+							expect(err.code).toEqual("E_TRANSACTION_CLOSED");
 						}),
 						db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-							expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
+							expect(rows).toEqual([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
 						})
 					]);
 				});
@@ -209,13 +209,13 @@ describe("iw-mysql-wrapper", function () {
 					]);
 				}).then(neverCallMe("Query should throw a parse error.")).catch(function verifyAfterRollback(err) {
 
-					expect(err.code).to.eql("ER_PARSE_ERROR");
+					expect(err.code).toEqual("ER_PARSE_ERROR");
 					return Promise.all([
 						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
-							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
+							expect(err.code).toEqual("E_TRANSACTION_CLOSED");
 						}),
 						db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-							expect(rows).to.eql([], "DB scope: should have no values in the table (transaction is rolled back)");
+							expect(rows).toEqual([], "DB scope: should have no values in the table (transaction is rolled back)");
 						})
 					]);
 
@@ -229,12 +229,12 @@ describe("iw-mysql-wrapper", function () {
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (1);"),
 						transactionScope.query("BAD SQL;").catch(function (e) {
 							// handle error
-							expect(e.code).to.eql("ER_PARSE_ERROR");
+							expect(e.code).toEqual("ER_PARSE_ERROR");
 						})
 					]);
 				}).then(function () {
 					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-						expect(rows).to.eql([{id: 1}], "DB scope: should have values in the table (transaction is complete, errors were handled)");
+						expect(rows).toEqual([{id: 1}], "DB scope: should have values in the table (transaction is complete, errors were handled)");
 					});
 				});
 
@@ -249,7 +249,7 @@ describe("iw-mysql-wrapper", function () {
 						});
 				}).then(function () {
 					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-						expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
+						expect(rows).toEqual([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
 					});
 				});
 
@@ -279,7 +279,7 @@ describe("iw-mysql-wrapper", function () {
 					transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);");
 				}).then(function () {
 					return db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-						expect(rows).to.eql([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
+						expect(rows).toEqual([{id: 1}, {id: 2}], "DB scope: should have values in the table (transaction is complete)");
 					});
 				});
 
@@ -296,13 +296,13 @@ describe("iw-mysql-wrapper", function () {
 
 				}).then(neverCallMe("Query should throw a parse error.")).catch(function verifyAfterRollback(err) {
 
-					expect(err.code).to.eql("ER_PARSE_ERROR");
+					expect(err.code).toEqual("ER_PARSE_ERROR");
 					return Promise.all([
 						savedScope.query("SELECT 1;").then(neverCallMe("Transaction should be closed.")).catch(function (err) {
-							expect(err.code).to.eql("E_TRANSACTION_CLOSED");
+							expect(err.code).toEqual("E_TRANSACTION_CLOSED");
 						}),
 						db.query("SELECT * FROM `iw_mysql_wrapper_test`").then(function (rows) {
-							expect(rows).to.eql([], "DB scope: should have no values in the table (transaction is rolled back)");
+							expect(rows).toEqual([], "DB scope: should have no values in the table (transaction is rolled back)");
 						})
 					]);
 
@@ -317,7 +317,7 @@ describe("iw-mysql-wrapper", function () {
 						transactionScope.query("INSERT INTO `iw_mysql_wrapper_test` VALUES (2);")
 							.then(neverCallMe("Transaction should be closed"))
 							.catch(function (err) {
-								expect(err.code).to.eql("E_TRANSACTION_CLOSED");
+								expect(err.code).toEqual("E_TRANSACTION_CLOSED");
 								done();
 							});
 					});
@@ -341,8 +341,8 @@ describe("iw-mysql-wrapper", function () {
 			db = new Database({dsn: getDsn()});
 			return db.query("SHOW DATABASES;")
 				.then(function (rows) {
-					expect(rows.length).to.be.greaterThan(1);
-					expect(rows).to.contain({"Database": "insidewarehouse_integration_test"});
+					expect(rows.length).toBeGreaterThan(1);
+					expect(rows).toInclude({"Database": "insidewarehouse_integration_test"});
 				});
 		});
 
@@ -351,7 +351,7 @@ describe("iw-mysql-wrapper", function () {
 			var paramified = db.paramify(["insidewarehouse_integration_test"], "db");
 			return db.query("SHOW DATABASES WHERE `Database` IN (" + paramified.tokens.join(",") + ");", paramified.values)
 				.then(function (rows) {
-					expect(rows).to.eql([{"Database": "insidewarehouse_integration_test"}]);
+					expect(rows).toEqual([{"Database": "insidewarehouse_integration_test"}]);
 				});
 		});
 
@@ -359,9 +359,9 @@ describe("iw-mysql-wrapper", function () {
 			db = new Database({dsn: getDsn(), multipleStatements: true});
 			return db.query("SHOW DATABASES; SHOW DATABASES;")
 				.then(function (results) {
-					expect(results.length).to.eql(2);
-					expect(results[0]).to.contain({"Database": "insidewarehouse_integration_test"});
-					expect(results[1]).to.contain({"Database": "insidewarehouse_integration_test"});
+					expect(results.length).toEqual(2);
+					expect(results[0]).toInclude({"Database": "insidewarehouse_integration_test"});
+					expect(results[1]).toInclude({"Database": "insidewarehouse_integration_test"});
 				});
 		});
 

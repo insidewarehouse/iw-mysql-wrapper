@@ -5,8 +5,9 @@ before_install:
 matrix:
   include:
     - node_js: "0.12"
-    - node_js: "4"
     - node_js: "io.js"
+    - node_js: "4"
+    - node_js: "5"
 before_script:
   - mysql -e 'create database insidewarehouse_integration_test;'
 deploy:

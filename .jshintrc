@@ -8,6 +8,7 @@
   "nonbsp": true,
   "noempty": true,
   "unused": true,
+  "undef": true,
   "multistr": true,
   "strict": true,
   "globals": {
